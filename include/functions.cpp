@@ -36,6 +36,9 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 // ########################## RECEIVE ##########################
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) //Funktion von Eferu
 {
+led_status = !led_status;
+ digitalWrite(LED_BUILTIN, led_status);
+
 #ifdef SENDER1
   uint16_t checksum;
   memcpy(&buf_recv, incomingData, BUFFER_SIZE_RECEIVE); //Argumente: wohin, woher, anzahl bytes
@@ -127,30 +130,37 @@ void makecommand(int16_t uSteer, int16_t uSpeed)
   */ 
 }
 void steerlogic(){
+  
   if (potval<2048){
-    	speedchange = map(potval, 0, 2047, -10, 0);
+    	speedchange = map(potval, 0, 2047, 10, 0);
     }
   if (potval>2048){
-      speedchange = map(potval, 2049, 4096, 0, 10);
+      speedchange = map(potval, 2049, 4095, 0, -11);
   }
   
-  if (btn_1==1 && speed>-MAX_SPEED){
-    speed-=speedchange; }
-
-  if (btn_2==1 && speed<MAX_SPEED){
-    speed+=speedchange; }
-
-  if (btn_3==1){
-    //steer=0;
+  if (btn_1==1){ //Button über Poti --> Stop
+    steer=0;
     speed=0;
   }
   
-  if (btn_4==1){
-    steer+=10; }
+  if (btn_2==1){
+    steer-=10;   
+  }
   
-  if (btn_5==1){
-    steer-=10; }
+  if (btn_3==1){
+    steer+=10;   
+  }
 
+  if (btn_4==1 && speed>-MAX_SPEED){
+    //speed-=speedchange; }
+    speed--;
+  }
+
+  if (btn_5==1 && speed<MAX_SPEED){
+    //speed+=speedchange; }
+    speed++;
+  }
+  
   if (buttonpressed != 1){
     //speed=0;
     steer=0; }
@@ -190,7 +200,11 @@ void serialdebug(){
   Serial.print(" Steer: ");
   Serial.print(steer);
   Serial.print(" Potval: ");
-  Serial.println(potval);
+  Serial.print(potval);
+  Serial.print(" ESPNOW Status: ");
+  Serial.println(esp_err_to_name(result));
+  //buf_send[0]=0x00;
+  
 
  
 }

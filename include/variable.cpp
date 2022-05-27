@@ -1,9 +1,8 @@
 // ########################## Bewegungseigenschaften ##########################
-#define MAX_SPEED  200
+#define MAX_SPEED  500
 // ########################## Wireless Parameter ##########################
 esp_now_peer_info_t sender;
 esp_now_peer_info_t orgel;
-
 esp_err_t result;
 #define SENDER1_MAC {0x00, 0x00, 0x00, 0x00, 0x00, 0x01}  // Sender dev mit Keypad
 #define ORGEL_MAC {0x00, 0x00, 0x00, 0x00, 0x00, 0x02}  // Empfänger an der Orgel
@@ -23,21 +22,27 @@ esp_err_t result;
 uint8_t newMACAddress[] = SENDER1_MAC;
 #define BUFFER_SIZE_SEND 8 // max of 250 bytes
 #define BUFFER_SIZE_RECEIVE 18 // max of 250 bytes
-uint8_t broadcastAddress[] = ORGEL_MAC;
+uint8_t orgel[] = ORGEL_MAC;
 #endif
 
 #ifdef ORGEL
-extern uint8_t newMACAddress[] = ORGEL_MAC; 
+uint8_t newMACAddress[] = ORGEL_MAC; 
 #define BUFFER_SIZE_SEND 18 // max of 250 bytes
 #define BUFFER_SIZE_RECEIVE 8 // max of 250 bytes
 extern uint8_t broadcastAddress[] = SENDER1_MAC;
 #endif
 
+#ifdef WAND
+uint8_t newMACAddress[] = WAND_MAC; 
+#define BUFFER_SIZE_SEND 18 // max of 250 bytes
+#define BUFFER_SIZE_RECEIVE 8 // max of 250 bytes
+#endif
+
 // ########################## Hardware Belegung ##########################
 //Kein Pullup bei: GPIO34, GPIO35, GPIO36, GPIO37,  GPIO38, GPIO39 !!!
 uint8_t button1pin=27;
-uint8_t button2pin=26;
-uint8_t button3pin=14; 
+uint8_t button2pin=14;
+uint8_t button3pin=26; 
 uint8_t button4pin=25; 
 uint8_t button5pin=33; 
 uint8_t potpin = 32;
@@ -98,7 +103,7 @@ SerialFeedback Feedback;
 #ifdef SCREEN
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 #define LOGO_HEIGHT   16
 #define LOGO_WIDTH    16
@@ -124,3 +129,6 @@ static const unsigned char PROGMEM logo_bmp[] =
 
 
 #endif
+
+
+uint8_t mode;

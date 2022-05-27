@@ -29,27 +29,42 @@ void setup() {
   WiFi.mode(WIFI_STA);
   esp_wifi_set_mac(WIFI_IF_STA, &newMACAddress[0]);
   Serial.print("Starting.....");
+  
   #ifdef ORGEL
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
-  
   #endif
   
 
   #ifdef SENDER1
+  if (esp_wifi_set_channel(WIFI_CHAN, WIFI_SECOND_CHAN_NONE) != ESP_OK) {
+    #ifdef DEBUG
+    Serial.println("Error changing WiFi channel");
+    #endif
+    return;
+  }
+  
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
   pinMode(button1pin, INPUT_PULLUP);
   pinMode(button2pin, INPUT_PULLUP);
   pinMode(button3pin, INPUT_PULLUP);
   pinMode(button4pin, INPUT_PULLUP);
   pinMode(button5pin, INPUT_PULLUP);
   
-  memcpy(orgel.peer_addr, ORGEL_MAC, 6);
+  memcpy(orgel.peer_addr, orgel, 6);
   orgel.channel = 13;  
   orgel.encrypt = false;
-  
-  #endif
+   
+  // Add peer        
+  if (esp_now_add_peer(&orgel) != ESP_OK){
+    Serial.println("Failed to add peer");
+    return;
+  }
 
   #ifdef DEBUG
   Serial.begin(BAUD_RATE, SER_PARAMS, RX_PIN, TX_PIN);
@@ -64,6 +79,7 @@ void setup() {
     #endif
     return;
   }
+  
   /*
   if (esp_wifi_set_channel(WIFI_CHAN, WIFI_SECOND_CHAN_NONE) != ESP_OK) {
     #ifdef DEBUG
@@ -72,15 +88,11 @@ void setup() {
     return;
   }
   */
-
-  esp_now_register_recv_cb(OnDataRecv);
-  //#if defined(DEBUG) || defined(BLINK_ON_SEND_SUCCESS)
-  esp_now_register_send_cb(OnDataSent);
-  //#endif
+    #endif
+  
 
 
   #ifdef SCREEN
-  //Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
     Serial.println(F("SSD1306 allocation failed"));
     for(;;); // Don't proceed, loop forever
@@ -99,7 +111,11 @@ void setup() {
     display.clearDisplay();
   */
   #endif
- 
+
+  esp_now_register_recv_cb(OnDataRecv);
+  esp_now_register_send_cb(OnDataSent);
+  
+
 }
 
 #ifdef SCREEN
@@ -143,10 +159,12 @@ if (Serial.available()) {
   sender.channel = 13;  
   sender.encrypt = false;
   
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &buf_send, buf_size);
+  esp_err_t result = esp_now_send(orgel, (uint8_t *) &buf_send, buf_size);
   buf_size = 0;
-    
-    #ifdef BLINK_ON_SEND
+
+  
+
+  #ifdef BLINK_ON_SEND
   led_status = !led_status;
   digitalWrite(LED_BUILTIN, led_status);
   #endif
@@ -179,19 +197,11 @@ if (Serial.available()) {
    
   //if (micros() >= send_timeout) {
   //send_timeout = micros() + timeout_micros;
-  //result = esp_now_send(broadcastAddress, (uint8_t *) &Command, sizeof(Command));     
-  
   unsigned long timeNow = millis();
-  if (timeNow - prevsend >= TIME_SEND && buf_send[0] != 0x00) { // 
+  if (timeNow - prevsend >= TIME_SEND ) { //&& buf_send[0] != 0x00 
   prevsend = timeNow;
-  //serialdebug();
-  
-  result = esp_now_send(broadcastAddress, (uint8_t *) &Command, sizeof(Command));     
-  led_status = !led_status;
-  digitalWrite(LED_BUILTIN, led_status);
-  Serial.println(esp_err_to_name(result));
-  buf_send[0]=0x00;
+  result = esp_now_send(orgel, (uint8_t *) &Command, sizeof(Command));     
   }
-
+  //serialdebug();
 #endif 
 }

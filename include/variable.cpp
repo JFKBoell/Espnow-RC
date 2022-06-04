@@ -1,8 +1,14 @@
 // ########################## Bewegungseigenschaften ##########################
 #define MAX_SPEED  500
+#define MAX_STEER  50
 // ########################## Wireless Parameter ##########################
 esp_now_peer_info_t sender;
+esp_now_peer_info_t sender1;
+esp_now_peer_info_t sender2;
+esp_now_peer_info_t sender3;
 esp_now_peer_info_t orgel;
+esp_now_peer_info_t wand;
+esp_now_peer_info_t board;
 esp_err_t result;
 #define SENDER1_MAC {0x00, 0x00, 0x00, 0x00, 0x00, 0x01}  // Sender dev mit Keypad
 #define ORGEL_MAC {0x00, 0x00, 0x00, 0x00, 0x00, 0x02}  // Empfänger an der Orgel
@@ -22,29 +28,55 @@ esp_err_t result;
 uint8_t newMACAddress[] = SENDER1_MAC;
 #define BUFFER_SIZE_SEND 8 // max of 250 bytes
 #define BUFFER_SIZE_RECEIVE 18 // max of 250 bytes
-uint8_t orgel[] = ORGEL_MAC;
+uint8_t Orgel_Address[] = ORGEL_MAC;
+uint8_t Wand_Address[] = WAND_MAC;
+uint8_t Board_Address[] = SIDEBOARD_MAC;
 #endif
 
-#ifdef ORGEL
+#ifdef RECEIVER_1
 uint8_t newMACAddress[] = ORGEL_MAC; 
 #define BUFFER_SIZE_SEND 18 // max of 250 bytes
 #define BUFFER_SIZE_RECEIVE 8 // max of 250 bytes
-extern uint8_t broadcastAddress[] = SENDER1_MAC;
+uint8_t Sender1_Address[] = SENDER1_MAC;
 #endif
 
-#ifdef WAND
+#ifdef RECEIVER_2
 uint8_t newMACAddress[] = WAND_MAC; 
 #define BUFFER_SIZE_SEND 18 // max of 250 bytes
 #define BUFFER_SIZE_RECEIVE 8 // max of 250 bytes
+uint8_t Sender2_Address[] = SENDER1_MAC;
 #endif
+
+#ifdef RECEIVER_3
+uint8_t newMACAddress[] = SIDEBOARD_MAC; 
+#define BUFFER_SIZE_SEND 18 // max of 250 bytes
+#define BUFFER_SIZE_RECEIVE 8 // max of 250 bytes
+uint8_t Sender3_Address[] = SENDER1_MAC;
+#endif
+
+
 
 // ########################## Hardware Belegung ##########################
 //Kein Pullup bei: GPIO34, GPIO35, GPIO36, GPIO37,  GPIO38, GPIO39 !!!
-uint8_t button1pin=27;
-uint8_t button2pin=14;
-uint8_t button3pin=26; 
-uint8_t button4pin=25; 
-uint8_t button5pin=33; 
+
+const int SHORT_PRESS_TIME = 1000; // 1 sek
+const int LONG_PRESS_TIME  = 1000; // 1 sek
+unsigned long pressedTime  = 0;
+unsigned long releasedTime = 0;
+bool isPressing = false;
+bool isLongDetected = false;
+
+//uint8_t button1pin=27;
+ezButton button1(27);
+//uint8_t button2pin=14;
+ezButton button2(14);
+//uint8_t button3pin=26;
+ezButton button3(26);
+//uint8_t button4pin=25; 
+ezButton button4(25);
+//uint8_t button5pin=33; 
+//bool btn_1,btn_2,btn_3,btn_4,btn_5;
+ezButton button5(33);
 uint8_t potpin = 32;
 int8_t speedchange;
 int8_t steerchange;
@@ -52,7 +84,7 @@ int16_t speed = 0;
 int16_t steer = 0;
 bool buttonpressed;
 uint16_t potval;
-bool btn_1,btn_2,btn_3,btn_4,btn_5;
+
 
 #ifndef LED_BUILTIN
 #define LED_BUILTIN 2  // some boards don't have an LED or have it connected elsewhere
@@ -85,6 +117,8 @@ typedef struct{
    uint16_t checksum;
 } SerialCommand;
 SerialCommand Command;
+SerialCommand Command_1;
+SerialCommand Command_2;
 
 typedef struct{
    uint16_t start;
@@ -98,6 +132,8 @@ typedef struct{
    uint16_t checksum;
 } SerialFeedback;
 SerialFeedback Feedback;
+SerialFeedback Feedback_1;
+SerialFeedback Feedback_2;
 
 // ########################## Bildschirm Parameter ##########################
 #ifdef SCREEN
@@ -130,5 +166,15 @@ static const unsigned char PROGMEM logo_bmp[] =
 
 #endif
 
+static uint8_t modus =1;
+static bool running;
+//const char* modus[] = {"Direkt" , "Gerade" , "Kreis"};
 
-uint8_t mode;
+/* Kapitel Deklarationen:
+Hier beginnt ein Teil, welcher für Menschen lesbarern Inhalt bieten soll
+
+
+
+
+
+*/

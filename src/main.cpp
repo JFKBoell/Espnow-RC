@@ -1,14 +1,20 @@
 #define DEBUG
 #define BLINK_ON_SEND
 #define BLINK_ON_RECV
-//#define ORGEL
-#define SCREEN
+//#define RECEIVER_1 //(Orgel)
+//#define RECEIVER_2 
+//#define RECEIVER_3
+
 #define SENDER1
+//#define SENDER2
+//#define SENDER3
+#define SCREEN
 
 #include <Arduino.h>
 #include <esp_now.h>
 #include <WiFi.h>
 #include <esp_wifi.h>
+#include <ezButton.h>
 
 #ifdef SCREEN
 #include <Adafruit_I2CDevice.h>
@@ -28,9 +34,14 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   WiFi.mode(WIFI_STA);
   esp_wifi_set_mac(WIFI_IF_STA, &newMACAddress[0]);
-  Serial.print("Starting.....");
+  Serial.print("Mac Address set, Starting.....");
   
-  #ifdef ORGEL
+  #ifdef RECEIVER_1
+  memcpy(sender1.peer_addr, Sender1_Address, 6);
+  sender1.channel = 13;  
+  sender1.encrypt = false;
+
+
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
     return;
@@ -39,6 +50,12 @@ void setup() {
   
 
   #ifdef SENDER1
+  button1.setDebounceTime(50); // set debounce time to 50 milliseconds
+  button2.setDebounceTime(50); // set debounce time to 50 milliseconds
+  button3.setDebounceTime(50); // set debounce time to 50 milliseconds
+  button4.setDebounceTime(50); // set debounce time to 50 milliseconds
+  button5.setDebounceTime(50); // set debounce time to 50 milliseconds
+  
   if (esp_wifi_set_channel(WIFI_CHAN, WIFI_SECOND_CHAN_NONE) != ESP_OK) {
     #ifdef DEBUG
     Serial.println("Error changing WiFi channel");
@@ -50,19 +67,39 @@ void setup() {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
+  /*
   pinMode(button1pin, INPUT_PULLUP);
   pinMode(button2pin, INPUT_PULLUP);
   pinMode(button3pin, INPUT_PULLUP);
   pinMode(button4pin, INPUT_PULLUP);
   pinMode(button5pin, INPUT_PULLUP);
-  
-  memcpy(orgel.peer_addr, orgel, 6);
+  */
+  memcpy(orgel.peer_addr, Orgel_Address, 6);
   orgel.channel = 13;  
   orgel.encrypt = false;
-   
+  
+  memcpy(wand.peer_addr, Wand_Address, 6);
+  wand.channel = 13;  
+  wand.encrypt = false;
+  
+  memcpy(board.peer_addr, Board_Address, 6);
+  board.channel = 13;  
+  board.encrypt = false;
+  
+
   // Add peer        
   if (esp_now_add_peer(&orgel) != ESP_OK){
-    Serial.println("Failed to add peer");
+    Serial.println("Failed to add Orgel");
+    return;
+  }
+  
+  if (esp_now_add_peer(&wand) != ESP_OK){
+    Serial.println("Failed to add Wand");
+    return;
+  }
+  
+  if (esp_now_add_peer(&board) != ESP_OK){
+    Serial.println("Failed to add Board");
     return;
   }
 
@@ -124,19 +161,55 @@ void drawinterface(){
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   display.setTextSize(2); // Draw 2X-scale text
-  display.println("Orgel");
-  display.setTextSize(1); // Draw 2X-scale text
-  display.print("Speedchange: ");
-  display.println(speedchange);
-  display.print("Speed: ");
-  display.println(speed);
-  display.print("Steer: ");
-  display.println(steer);
+    
+  switch (modus){
+    case 1: //direkt steuern
+    display.println("Direkt");  
+    display.setTextSize(1); 
+    display.print("Speedchange: ");
+    display.println(speedchange);
+    display.print("Speed: ");
+    display.println(speed);
+    display.print("Steer: ");
+    display.println(steer);
+    
+  
+    break;
+    case 2: //automatik gerade
+    display.println("Gerade");
+    display.setTextSize(1); 
+    display.print("Laenge: ");
+    display.println("xxx");
+    display.print("Geschwindigkeit: ");
+    display.println(speed);
+    display.print("Status: ");
+    if (running)display.println("running...");
+    if (!running)display.println("Stopped!");
+    
+    
+    
+    
+    break;
+    case 3: //automatik kreis
+    display.println("Kreis");
+    display.setTextSize(1); 
+    display.print("Durchmesser: ");
+    display.println(steer);
+    display.print("Geschwindigkeit: ");
+    display.println(speed);
+    display.print("Status: ");
+    if (running)display.println("running...");
+    if (!running)display.println("Stopped!");
+    break;
+
+  }
+  
+  //display.print(modus[mode]);
   display.print("Battery: ");
   display.println(Feedback.batVoltage);
   display.print("Temp: ");
   display.println(Feedback.boardTemp);
-  display.display();      // Show initial text
+  display.display();
   //display.setCursor(0, 10);
 }
 #endif
@@ -144,7 +217,7 @@ void loop() {
 //serialdebug();
 
 
-#ifdef ORGEL
+#if defined RECEIVER_1 || defined RECEIVER_2 || defined RECEIVER_3
 if (Serial.available()) {
     while (Serial.available() && buf_size < BUFFER_SIZE) {
       buf_send[buf_size] = Serial.read();
@@ -154,12 +227,12 @@ if (Serial.available()) {
   }
   // send buffer contents when full or timeout has elapsed
   if (buf_size == BUFFER_SIZE_SEND || (buf_size > 0 && micros() >= send_timeout)) {
-    
-  memcpy(sender.peer_addr, ORGEL_MAC, 6);
+  /*  
+  memcpy(sender.peer_addr, orgel_, 6);
   sender.channel = 13;  
   sender.encrypt = false;
-  
-  esp_err_t result = esp_now_send(orgel, (uint8_t *) &buf_send, buf_size);
+  */
+  esp_err_t result = esp_now_send(Sender1_Address, (uint8_t *) &buf_send, buf_size);
   buf_size = 0;
 
   
@@ -188,6 +261,17 @@ if (Serial.available()) {
     #endif
     
 #ifdef SENDER1
+  button1.loop();
+  button2.loop();
+  button3.loop();
+  button4.loop();
+  button5.loop();
+  int btn1State = button1.getState();
+  int btn2State = button2.getState();
+  int btn3State = button3.getState();
+  int btn4State = button4.getState();
+  int btn5State = button5.getState();
+
   #ifdef SCREEN
   drawinterface();
   #endif
@@ -200,8 +284,11 @@ if (Serial.available()) {
   unsigned long timeNow = millis();
   if (timeNow - prevsend >= TIME_SEND ) { //&& buf_send[0] != 0x00 
   prevsend = timeNow;
-  result = esp_now_send(orgel, (uint8_t *) &Command, sizeof(Command));     
+  result = esp_now_send(Orgel_Address, (uint8_t *) &Command, sizeof(Command));     
   }
-  //serialdebug();
+  #ifdef DEBUG
+  serialdebug();
+  #endif
+
 #endif 
 }

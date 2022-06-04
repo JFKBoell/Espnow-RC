@@ -2,14 +2,16 @@
 // ########################## HANDLE I/O ##########################
 void readio(){
 #ifdef SENDER1
+/*
 btn_1 = !digitalRead(button1pin);
 btn_2 = !digitalRead(button2pin);
 btn_3 = !digitalRead(button3pin);
 btn_4 = !digitalRead(button4pin);
 btn_5 = !digitalRead(button5pin);
-
+*/
 potval = analogRead(potpin);
-if (btn_1 == 1 || btn_2 == 1 || btn_3 == 1 || btn_4 == 1 || btn_5 == 1){
+
+if (button1.isPressed() || button2.isPressed() || button3.isPressed() || button4.isPressed() || button5.isPressed()){
 buttonpressed=1;  
 }
 else
@@ -79,7 +81,7 @@ led_status = !led_status;
         }
 #endif
 
-#ifdef ORGEL
+#if defined RECEIVER_1 || defined RECEIVER_2 || defined RECEIVER_3
 memcpy(&buf_recv, incomingData, sizeof(buf_recv));
 //#ifdef BLINK_ON_RECV
 //#endif
@@ -103,81 +105,101 @@ void makecommand(int16_t uSteer, int16_t uSpeed)
   Command.checksum = (uint16_t)(Command.start ^ Command.steer ^ Command.speed);
    
   memcpy(buf_send, &Command, BUFFER_SIZE_SEND); //Argumente: wohin, woher, anzahl bytes   
-    
-  
-  
+ 
   // bufStartFrame = ((uint16_t)(buf_recv[1]) << 8) | buf_recv[0];       // Construct the start frame
   // Feedback.start = (buf_recv[1] << 8) | buf_recv[0];
-  
-  //unsigned int word = ((unsigned int)high_byte << 8) + low_byte
+   //unsigned int word = ((unsigned int)high_byte << 8) + low_byte
   //Feedback.cmd1 = (buf_recv[3] << 8) | buf_recv[2];
   //memcpy(buf_send, &Command, BUFFER_SIZE_SEND); //Argumente: wohin, woher, anzahl bytes
   //esp_now_send(broadcastAddress, (uint8_t *) &buf_send, BUFFER_SIZE_SEND);
   #ifdef DEBUG
   #endif
-  /*
-  esp_now_send(broadcastAddress, (uint8_t *) &Command, BUFFER_SIZE_SEND); 
-  
-  Serial.write((uint8_t *) &Command, sizeof(Command)); 
-  Serial.print(" ");
-  Serial.print(Command.start);
-  Serial.print(" ");
-  Serial.print(Command.steer);
-  Serial.print(" ");
-  Serial.print(Command.speed);
-  Serial.print(" ");
-  Serial.println(Command.checksum);
-  */ 
+ 
 }
 void steerlogic(){
-  
-  if (potval<2048){
-    	speedchange = map(potval, 0, 2047, 10, 0);
+  if(button2.isReleased()){
+    modus++;
+    if (modus >3) modus=1;
     }
-  if (potval>2048){
-      speedchange = map(potval, 2049, 4095, 0, -11);
-  }
+
+  if (button3.isReleased()){ //Navigate from Mode 1-3
+    modus--;
+    if (modus <1) modus=3;
+     }
+    
+   switch (modus){
+    case 1: //#################   direkt steuern
+    if (potval<2048){
+    //	speedchange = map(potval, 0, 2047, MAX_SPEED, 0);
+    steer=map(potval, 0, 2047, MAX_STEER, 0);
+    }
+    if (potval>2048){
+    //  speedchange = map(potval, 2049, 4095, 0, -MAX_SPEED);
+    steer=map(potval, 2048, 4095, 0,-MAX_STEER);
+    }
   
-  if (btn_1==1){ //Button über Poti --> Stop
+    if (button1.isPressed()){ //Button über Poti --> Stop
     steer=0;
     speed=0;
-  }
+    }
   
-  if (btn_2==1){
-    steer-=10;   
-  }
+    /*
+    if (btn_2==1 && steer>-MAX_STEER){
+    steer--;   
+    }
   
-  if (btn_3==1){
-    steer+=10;   
-  }
+    if (btn_3==1 && steer<MAX_STEER){
+    steer++;   
+    }
+    */
 
-  if (btn_4==1 && speed>-MAX_SPEED){
+     if (!button4.getState() && speed>-MAX_SPEED){
     //speed-=speedchange; }
     speed--;
-  }
+    }
 
-  if (btn_5==1 && speed<MAX_SPEED){
+    if (!button5.getState() && speed<MAX_SPEED){
     //speed+=speedchange; }
     speed++;
-  }
-  
-  if (buttonpressed != 1){
-    //speed=0;
-    steer=0; }
-  
-  /*  
-    if (buttonpressed == 1){
-    //speed+=speedchange;
     }
-    else
-    {
-      speed=0;
-      speedchange=0;
-      //steer=0;
-    }    
+
+    if (buttonpressed != 1){ //rücksetzen, falls nichts gedrückt
+    //speed=0;
+    //steer=0; 
+    }
+    break;
+   
+   
+    case 2: ////#################   automatik gerade
+    if (button1.isPressed()){ //Button über Poti --> Start / Stop
+    running = !running;
+    }
+
+    break;
+   
+   
+    case 3: ////#################   automatik kreis
+    if (potval<2048){
+    	steer = map(potval, 0, 2047, MAX_STEER, 0);
+    }
+    
+    if (potval>2048){
+      steer = map(potval, 2049, 4095, 0, -MAX_STEER);
+    }
+    
+  if (button1.isPressed()){ //Button über Poti --> Start / Stop
+  running = !running;
   }
-  */
+
+  break;
+
+  }
+  
+  
+  
 }
+
+
 void serialdebug(){
   Serial.print("Buffer Send: ");
   for(int i=0; i < BUFFER_SIZE_SEND; i++){
@@ -185,6 +207,7 @@ void serialdebug(){
   }
   //Serial.write(0x1B);
   Serial.print("   ");
+  /*
   Serial.print(" Btn 1:");
   Serial.print(btn_1);
   Serial.print(" Btn 2: ");
@@ -195,6 +218,7 @@ void serialdebug(){
   Serial.print(btn_4);
   Serial.print(" Btn 5: ");
   Serial.print(btn_5);
+  */
   Serial.print(" Speed: ");
   Serial.print(speed);
   Serial.print(" Steer: ");

@@ -1,7 +1,7 @@
 
 // ########################## HANDLE I/O ##########################
 void readio(){
-#ifdef SENDER1
+#if defined SENDER1 || defined SENDER2 || defined SENDER3
 /*
 btn_1 = !digitalRead(button1pin);
 btn_2 = !digitalRead(button2pin);
@@ -9,7 +9,20 @@ btn_3 = !digitalRead(button3pin);
 btn_4 = !digitalRead(button4pin);
 btn_5 = !digitalRead(button5pin);
 */
+
 potval = analogRead(potpin);
+if (potprev == potval || potprev == potval-1 || potprev == potval+1){
+potchanged = false;
+}
+
+if (potprev != potval){
+potchanged = true;
+potprev = potval;
+}
+
+
+
+//|| potprev == potval-1 || potprev == potval+1
 
 if (button1.isPressed() || button2.isPressed() || button3.isPressed() || button4.isPressed() || button5.isPressed()){
 buttonpressed=1;  
@@ -39,9 +52,10 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) //Funktion von Eferu
 {
 led_status = !led_status;
- digitalWrite(LED_BUILTIN, led_status);
+digitalWrite(LED_BUILTIN, led_status);
 
-#ifdef SENDER1
+
+#if defined SENDER1 || defined SENDER2 || defined SENDER3
   uint16_t checksum;
   memcpy(&buf_recv, incomingData, BUFFER_SIZE_RECEIVE); //Argumente: wohin, woher, anzahl bytes
   //--> buf_rec enthält bis zu max 250bytes, eigentlich werden aber immer nur 18 geschickt.
@@ -83,14 +97,19 @@ led_status = !led_status;
 
 #if defined RECEIVER_1 || defined RECEIVER_2 || defined RECEIVER_3
 memcpy(&buf_recv, incomingData, sizeof(buf_recv));
-//#ifdef BLINK_ON_RECV
-//#endif
+
+for(int i=0; i < BUFFER_SIZE_RECEIVE; i++){
+   Serial.write(buf_recv[i]);
+  }
+
 
 #ifdef DEBUG
   Serial.print("\n Bytes received: ");
   Serial.print(len);
   Serial.print("Content: ");
-  //Serial.println(incomingData);
+  for(int i=0; i < BUFFER_SIZE_RECEIVE; i++){
+   Serial.write(buf_recv[i]);
+  }
 #endif
 #endif
     
@@ -112,9 +131,7 @@ void makecommand(int16_t uSteer, int16_t uSpeed)
   //Feedback.cmd1 = (buf_recv[3] << 8) | buf_recv[2];
   //memcpy(buf_send, &Command, BUFFER_SIZE_SEND); //Argumente: wohin, woher, anzahl bytes
   //esp_now_send(broadcastAddress, (uint8_t *) &buf_send, BUFFER_SIZE_SEND);
-  #ifdef DEBUG
-  #endif
- 
+  
 }
 void steerlogic(){
   if(button2.isReleased()){
@@ -126,34 +143,27 @@ void steerlogic(){
     modus--;
     if (modus <1) modus=3;
      }
-    
+   
+   if (button1.isReleased()){ //Button über Poti --> Stop
+    running = !running;
+     }
+   
    switch (modus){
     case 1: //#################   direkt steuern
-    if (potval<2048){
+    
+    if (running == true){
+   
+    if (potval<2048 && potchanged){
     //	speedchange = map(potval, 0, 2047, MAX_SPEED, 0);
     steer=map(potval, 0, 2047, MAX_STEER, 0);
     }
-    if (potval>2048){
+    
+    if (potval>2048 && potchanged){
     //  speedchange = map(potval, 2049, 4095, 0, -MAX_SPEED);
     steer=map(potval, 2048, 4095, 0,-MAX_STEER);
     }
-  
-    if (button1.isPressed()){ //Button über Poti --> Stop
-    steer=0;
-    speed=0;
-    }
-  
-    /*
-    if (btn_2==1 && steer>-MAX_STEER){
-    steer--;   
-    }
-  
-    if (btn_3==1 && steer<MAX_STEER){
-    steer++;   
-    }
-    */
-
-     if (!button4.getState() && speed>-MAX_SPEED){
+      
+    if (!button4.getState() && speed>-MAX_SPEED){
     //speed-=speedchange; }
     speed--;
     }
@@ -167,30 +177,79 @@ void steerlogic(){
     //speed=0;
     //steer=0; 
     }
+    
+    }else{
+    speed=0;
+    steer=0; 
+    }
     break;
-   
-   
     case 2: ////#################   automatik gerade
-    if (button1.isPressed()){ //Button über Poti --> Start / Stop
-    running = !running;
+
+    if (button4.getState()){ 
+    distanz++;
+    }
+    
+    if (button5.getState()){ 
+    distanz--;
+    }
+
+    if (button2.isPressed()){ 
+    maxspeed_linie++;
+    }
+    if (button3.isPressed()){ 
+    maxspeed_linie--;
+    }
+    
+    if (running == true){
+      unsigned long startzeit = millis();
+      
+      if (richtung == true){ //vorwärts
+          if (speed < maxspeed_linie){
+          speed++;
+                   
+      if (startzeit - prevstart >= distanz ) { //triggert alle distanz ms
+        prevstart = startzeit;
+        richtung = !richtung;
+        } 
+        }
+      
+      if (richtung == false){ //Rückwärts
+          if (speed > -maxspeed_linie){
+          speed--;
+                   
+        if (startzeit - prevstart >= distanz ) { //triggert alle distanz ms
+        prevstart = startzeit;
+        richtung =!richtung;
+        }
+        }
+      } 
+
+    
+    } else {
+    speed = 0;
+    steer = 0;    
     }
 
     break;
+    }
    
    
     case 3: ////#################   automatik kreis
-    if (potval<2048){
-    	steer = map(potval, 0, 2047, MAX_STEER, 0);
-    }
     
-    if (potval>2048){
-      steer = map(potval, 2049, 4095, 0, -MAX_STEER);
+    if (running == true){
+   	steer = map(potval, 0, 4095, 0, MAX_STEER);
+    if (!button4.getState() && speed>-MAX_SPEED){
+    speed--;
     }
-    
-  if (button1.isPressed()){ //Button über Poti --> Start / Stop
-  running = !running;
-  }
+    if (!button5.getState() && speed<MAX_SPEED){
+    speed++;
+    }
 
+    } else
+    {
+    speed = 0;
+    steer = 0;  
+    }
   break;
 
   }
@@ -201,13 +260,17 @@ void steerlogic(){
 
 
 void serialdebug(){
+  #if defined SENDER1 || defined SENDER2 || defined SENDER3
+  Serial.print("Sender! ");
   Serial.print("Buffer Send: ");
   for(int i=0; i < BUFFER_SIZE_SEND; i++){
    Serial.write(buf_send[i]);
   }
-  //Serial.write(0x1B);
-  Serial.print("   ");
-  /*
+  Serial.print("Buffer Recv: ");
+  for(int i=0; i < BUFFER_SIZE_SEND; i++){
+   Serial.write(buf_recv[i]);
+  }
+ /*
   Serial.print(" Btn 1:");
   Serial.print(btn_1);
   Serial.print(" Btn 2: ");
@@ -225,10 +288,29 @@ void serialdebug(){
   Serial.print(steer);
   Serial.print(" Potval: ");
   Serial.print(potval);
-  Serial.print(" ESPNOW Status: ");
-  Serial.println(esp_err_to_name(result));
   //buf_send[0]=0x00;
-  
+ 
+  Serial.print(" ESPNOW Status: ");
+  Serial.print(esp_err_to_name(result));
+ 
+  #endif
 
+
+  #if defined RECEIVER_1 || defined RECEIVER_2 || defined RECEIVER_3
+  Serial.print("Receiver! "); 
+  Serial.print("Buffer Send: ");
+  for(int i=0; i < BUFFER_SIZE_SEND; i++){
+   Serial.write(buf_send[i]);
+  }
+  Serial.print("Buffer Recv: ");
+  for(int i=0; i < BUFFER_SIZE_RECEIVE; i++){
+   Serial.write(buf_recv[i]);
+  }
+  Serial.print(" ESPNOW Status: ");
+  Serial.print(esp_err_to_name(result));
+ 
+  #endif
+  //Serial.write(0x1B);
+  Serial.println("");
  
 }

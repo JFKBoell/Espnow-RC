@@ -1,14 +1,22 @@
-#define DEBUG
-#define BLINK_ON_SEND
-#define BLINK_ON_RECV
-//#define RECEIVER_1 //(Orgel)
-//#define RECEIVER_2 
-//#define RECEIVER_3
+/*
+Fernsteuerung mit ESP32 Modul -> Hoverboard mit Firmware von Emanuel Feru.
+Version für 3 Fernbedienungen
 
+*/
+
+
+//#define RECEIVER_1 //(Orgel)
+//#define RECEIVER_2 //Wand
+//#define RECEIVER_3 //Board
 #define SENDER1
 //#define SENDER2
 //#define SENDER3
+//#define DEBUG
+
+#if defined SENDER1 || defined SENDER2 || defined SENDER3
+#define DEBUG
 #define SCREEN
+#endif
 
 #include <Arduino.h>
 #include <esp_now.h>
@@ -34,22 +42,67 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   WiFi.mode(WIFI_STA);
   esp_wifi_set_mac(WIFI_IF_STA, &newMACAddress[0]);
+  Serial.begin(BAUD_RATE, SER_PARAMS, RX_PIN, TX_PIN);
+
   Serial.print("Mac Address set, Starting.....");
-  
+  if (esp_wifi_set_channel(WIFI_CHAN, WIFI_SECOND_CHAN_NONE) != ESP_OK) {
+    #ifdef DEBUG
+    Serial.println("Error changing WiFi channel");
+    #endif
+  }
+
+#if defined RECEIVER_1 || defined RECEIVER_2 || defined RECEIVER_3
+  if (esp_wifi_set_channel(WIFI_CHAN, WIFI_SECOND_CHAN_NONE) != ESP_OK) {
+    #ifdef DEBUG
+    Serial.println("Error changing WiFi channel");
+    #endif
+    return;
+  }
+
+if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  } else {
+    Serial.println("ESP-NOW initialized");
+  }
+    
+#endif
+
   #ifdef RECEIVER_1
   memcpy(sender1.peer_addr, Sender1_Address, 6);
   sender1.channel = 13;  
   sender1.encrypt = false;
+  if (esp_now_add_peer(&sender1) != ESP_OK){
+    Serial.println("Failed to add Sender2");
+    return;
+  }
+  
+  #endif
 
-
-  if (esp_now_init() != ESP_OK) {
-    Serial.println("Error initializing ESP-NOW");
+  #ifdef RECEIVER_2
+  memcpy(sender2.peer_addr, Sender2_Address, 6);
+  sender2.channel = 13;  
+  sender2.encrypt = false;
+  if (esp_now_add_peer(&sender2) != ESP_OK){
+    Serial.println("Failed to add Sender2");
     return;
   }
   #endif
   
+  #ifdef RECEIVER_3
+  memcpy(sender3.peer_addr, Sender3_Address, 6);
+  sender3.channel = 13;  
+  sender3.encrypt = false;
+  if (esp_now_add_peer(&sender3) != ESP_OK){
+    Serial.println("Failed to add Sender3");
+    return;
+  }
+  
+  #endif
 
-  #ifdef SENDER1
+
+
+  #if defined SENDER1 || defined SENDER2 || defined SENDER3
   button1.setDebounceTime(50); // set debounce time to 50 milliseconds
   button2.setDebounceTime(50); // set debounce time to 50 milliseconds
   button3.setDebounceTime(50); // set debounce time to 50 milliseconds
@@ -67,44 +120,44 @@ void setup() {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
-  /*
-  pinMode(button1pin, INPUT_PULLUP);
-  pinMode(button2pin, INPUT_PULLUP);
-  pinMode(button3pin, INPUT_PULLUP);
-  pinMode(button4pin, INPUT_PULLUP);
-  pinMode(button5pin, INPUT_PULLUP);
-  */
+  #endif
+
+  #ifdef SENDER1
   memcpy(orgel.peer_addr, Orgel_Address, 6);
   orgel.channel = 13;  
   orgel.encrypt = false;
-  
-  memcpy(wand.peer_addr, Wand_Address, 6);
-  wand.channel = 13;  
-  wand.encrypt = false;
-  
-  memcpy(board.peer_addr, Board_Address, 6);
-  board.channel = 13;  
-  board.encrypt = false;
-  
-
-  // Add peer        
   if (esp_now_add_peer(&orgel) != ESP_OK){
     Serial.println("Failed to add Orgel");
     return;
   }
+  #endif
   
+  #ifdef SENDER2
+  memcpy(wand.peer_addr, Wand_Address, 6);
+  wand.channel = 13;  
+  wand.encrypt = false;
   if (esp_now_add_peer(&wand) != ESP_OK){
     Serial.println("Failed to add Wand");
     return;
   }
+
+  #endif
   
+  #ifdef SENDER3
+  memcpy(board.peer_addr, Board_Address, 6);
+  board.channel = 13;  
+  board.encrypt = false;
   if (esp_now_add_peer(&board) != ESP_OK){
     Serial.println("Failed to add Board");
     return;
   }
 
+  #endif
+ 
+ 
+
   #ifdef DEBUG
-  Serial.begin(BAUD_RATE, SER_PARAMS, RX_PIN, TX_PIN);
+  Serial.print("Setup done...");
   Serial.print("ESP32 MAC Address: ");
   Serial.println(WiFi.macAddress());
   #endif
@@ -117,18 +170,6 @@ void setup() {
     return;
   }
   
-  /*
-  if (esp_wifi_set_channel(WIFI_CHAN, WIFI_SECOND_CHAN_NONE) != ESP_OK) {
-    #ifdef DEBUG
-    Serial.println("Error changing WiFi channel");
-    #endif
-    return;
-  }
-  */
-    #endif
-  
-
-
   #ifdef SCREEN
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
     Serial.println(F("SSD1306 allocation failed"));
@@ -160,8 +201,17 @@ void drawinterface(){
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.setTextSize(2); // Draw 2X-scale text
-    
+  display.setTextSize(2); // Großer Text
+  #ifdef SENDER1
+  display.println("Orgel");
+  #endif
+  #ifdef SENDER2
+  display.println("Wand");
+  #endif
+  #ifdef SENDER3
+  display.println("Board");
+  #endif
+  display.setTextSize(1); // kleiner Text
   switch (modus){
     case 1: //direkt steuern
     display.println("Direkt");  
@@ -179,7 +229,7 @@ void drawinterface(){
     display.println("Gerade");
     display.setTextSize(1); 
     display.print("Laenge: ");
-    display.println("xxx");
+    display.println(distanz);
     display.print("Geschwindigkeit: ");
     display.println(speed);
     display.print("Status: ");
@@ -213,11 +263,13 @@ void drawinterface(){
   //display.setCursor(0, 10);
 }
 #endif
+
 void loop() {
 //serialdebug();
 
 
 #if defined RECEIVER_1 || defined RECEIVER_2 || defined RECEIVER_3
+
 if (Serial.available()) {
     while (Serial.available() && buf_size < BUFFER_SIZE) {
       buf_send[buf_size] = Serial.read();
@@ -225,42 +277,33 @@ if (Serial.available()) {
       buf_size++;
     }
   }
-  // send buffer contents when full or timeout has elapsed
+  #endif
+   
+  #ifdef RECEIVER_1
   if (buf_size == BUFFER_SIZE_SEND || (buf_size > 0 && micros() >= send_timeout)) {
-  /*  
-  memcpy(sender.peer_addr, orgel_, 6);
-  sender.channel = 13;  
-  sender.encrypt = false;
-  */
   esp_err_t result = esp_now_send(Sender1_Address, (uint8_t *) &buf_send, buf_size);
   buf_size = 0;
-
-  
-
-  #ifdef BLINK_ON_SEND
-  led_status = !led_status;
-  digitalWrite(LED_BUILTIN, led_status);
+  }
   #endif
   
-  #ifdef DEBUG
-  Serial.println(esp_err_to_name(result));
-  // esp_err_to_name_r(result)
-    if (result == ESP_OK) {
-      Serial.println("Sent!");
-       }
-    else {
-      // Serial.println("Send error");
-      //led_status = !led_status;
-      //digitalWrite(LED_BUILTIN, led_status);
-      }
-    
-    
-    }
-    
-     #endif
-    #endif
-    
-#ifdef SENDER1
+  #ifdef RECEIVER_2
+  if (buf_size == BUFFER_SIZE_SEND || (buf_size > 0 && micros() >= send_timeout)) {
+  esp_err_t result = esp_now_send(Sender2_Address, (uint8_t *) &buf_send, buf_size);
+  buf_size = 0;
+  }
+  #endif
+
+  #ifdef RECEIVER_3
+  if (buf_size == BUFFER_SIZE_SEND || (buf_size > 0 && micros() >= send_timeout)) {
+  esp_err_t result = esp_now_send(Sender3_Address, (uint8_t *) &buf_send, sizeof(buf_send));
+  buf_size = 0;
+  }
+  #endif
+  
+  
+  
+      
+#if defined SENDER1 || defined SENDER2 || defined SENDER3
   button1.loop();
   button2.loop();
   button3.loop();
@@ -271,24 +314,43 @@ if (Serial.available()) {
   int btn3State = button3.getState();
   int btn4State = button4.getState();
   int btn5State = button5.getState();
+  
+  readio();
+  steerlogic();
+  makecommand(steer,speed);
+  #endif
 
   #ifdef SCREEN
   drawinterface();
   #endif
-  readio();
-  steerlogic();
-  makecommand(steer,speed);
-   
-  //if (micros() >= send_timeout) {
-  //send_timeout = micros() + timeout_micros;
+
+  #ifdef SENDER1
   unsigned long timeNow = millis();
   if (timeNow - prevsend >= TIME_SEND ) { //&& buf_send[0] != 0x00 
   prevsend = timeNow;
   result = esp_now_send(Orgel_Address, (uint8_t *) &Command, sizeof(Command));     
   }
+  #endif
+  
+  #ifdef SENDER2
+  unsigned long timeNow = millis();
+  if (timeNow - prevsend >= TIME_SEND ) { //&& buf_send[0] != 0x00 
+  prevsend = timeNow;
+  result = esp_now_send(Wand_Address, (uint8_t *) &Command, sizeof(Command));     
+  }
+  #endif
+  
+  #ifdef SENDER3
+  unsigned long timeNow = millis();
+  if (timeNow - prevsend >= TIME_SEND ) { //&& buf_send[0] != 0x00 
+  prevsend = timeNow;
+  result = esp_now_send(Board_Address, (uint8_t *) &Command, sizeof(Command));     
+  }
+  #endif
+
   #ifdef DEBUG
   serialdebug();
   #endif
 
-#endif 
+
 }

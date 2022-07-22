@@ -108,23 +108,14 @@ uint8_t led_status = 0;
 #define LED_BUILTIN 2  // some boards don't have an LED or have it connected elsewhere
 #endif
 
-
-uint8_t idx = 0;                        // Index for new data pointer
-uint16_t bufStartFrame;                 // Buffer Start Frame
-uint8_t bufStartFrame8;
 unsigned long prevsend;
 unsigned long prevstart;
 
-byte *p;                                // Pointer declaration for the new received data
-byte *bytepointer;
-byte incomingByte;
-byte incomingBytePrev;
 const uint32_t timeout_micros = (int)(1.0 / BAUD_RATE * 1E6) * 20;
 uint32_t send_timeout = 0;
 uint8_t buf_recv[BUFFER_SIZE_RECEIVE];
 uint8_t buf_send[BUFFER_SIZE_SEND];
 uint8_t buf_size = 0;
-
 
 typedef struct{
    uint16_t start;
@@ -150,6 +141,8 @@ typedef struct{
 SerialFeedback Feedback;
 SerialFeedback Feedback_1;
 SerialFeedback Feedback_2;
+
+
 
 // ########################## Bildschirm Parameter ##########################
 #ifdef SCREEN
@@ -188,14 +181,3 @@ static uint8_t maxspeed_linie = 100;
 static bool richtung =1;
 static bool richtungwechsel =0;
 static bool running;
-
-//const char* modus[] = {"Direkt" , "Gerade" , "Kreis"};
-
-/* Kapitel Deklarationen:
-Hier beginnt ein Teil, welcher für Menschen lesbarern Inhalt bieten soll
-
-
-
-
-
-*/

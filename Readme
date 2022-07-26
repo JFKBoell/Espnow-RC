@@ -1,1 +1,228 @@
-Commit mit Hallo, hier dies ist die Readme...
+//Titel: „Kommentierter Programmcode für Kinetische Kunstinstallation“
+
+// Inhalt
+// Seite 2 – 3   --- Includes und Defines
+// Seite 4 – 8   --- Setup
+// Seite 9 – 12  --- Funktion Drawinterface
+// Seite 12 – 14 --- Loop
+// Seite 15 – 27 --- Abbildungen
+
+
+/*
+Einleitung
+Diese schriftliche Ausarbeitung ist ein Programmcode. Damit sie funktional ist, wurde sie syntaktisch korrekt als. So werden Kommentarbereiche und Maschinenanweisungen voneinander durch Kommentarzeichen geteilt. Der Code findet sich auch in einem GitHub Repositorys, dort sind in der Readme die Texte aus den Kommentaren separat zu finden.1
+Kommentare werden im Programmcode normalerweise genutzt, um zum besseren Verständnis der Struktur beizutragen. Sie erläutern schwer zu durchschauende Stellen oder geben Einblick in die Hintergrundgedanken, wie oder warum etwas gemacht wurde. Auch können sie zusätzliche Informationen oder Erläuterungen beinhalten.
+Bei einer künstlerischen Arbeit gibt es zu diesem Zweck oft begleitende Texte, welche die abstrakten Denkprozesse und Assoziationen der Kunst erläutert und hilft, das Wahrgenommene einzuordnen. Denn unser Gehirn arbeitet häufig mit Ordnungssystemen die Eindrücke Sortieren und Kategorisieren.
+Um Kommentare zu definieren gibt es je nach Programmiersprache unterschiedliche Konventionen. Im hier verwendeten C++ Dialekt werden sie durch zwei Schrägstriche // für eine einzelne Kommentarzeile oder durch einen Schrägstrich mit einem Stern „/*“ für einen ganzen Kommentarbereich gekennzeichnet, welcher umgekehrt mit „/*“ wieder aufgehoben wird.2
+Das Programm wurde geschrieben, um mit dem ESP32 Entwicklungsboard Nodemcu01 als Fernsteuerung für eine kinetische Installation zu funktionieren.
+Die Steuerung hat als Interface ein 0.96 Zoll OLED Display mit der Auflösung von 128x64 Pixel, fünf Taster und ein Potentiometer.
+Sie ist in einem 3-D gedruckten Gehäuse zusammen mit einer USB-Ladeschaltung und einer Lithium-Ionen-Zelle untergebracht. Das Entwicklungsboard und die Interfacekomponenten sind auf zwei selbst gefertigten Adapterplatinen verlötet, welche durch Stiftleisten verbunden aufeinandergestapelt sind. Die Platinen Layouts wurden mit der Software Kicad erstellt und auf der BZT CNC Fräse der KHM gefertigt. Dabei habe ich den Entwurfsprozess und die Designregeln im Programm so ausgerichtet, dass ich das komplette Platinenlayout ohne Werkzeugwechsel mit einem 0,8 mm Fräser herstellen kann.
+Was an eine industriell geprägte Optimierung des Arbeitsablaufes anmutet, hat mir die darauf folgenden mehrfach notwendigen Iterationen innerhalb des Entwicklungsprozesses weit erleichtert, so das ich es im Nachhinein definitiv als sinnvoll erachte würde. 
+Kompiliert wird das Programm mit VSCode zusammen mit der Erweiterung PlatformIO3.
+Es ist eine komfortable und vielseitige Entwicklungsumgebung.
+Jedoch halte ich es für wahrscheinlich, dass es in einigen Jahren nicht mehr möglich sein wird diesen Code damit zu übersetzen. Zukünftige Updates der Umgebung könnten dann nicht mehr abwärtskompatibel mit der derzeitigen Toolchain sein, oder es gibt irgendwelche Änderungen an den verwendeten Librarys.
+Die Fernsteuerung sendet über eine Prüfsumme und einen Time-out-Intervall von 100 ms abgesicherte digitale Steuer- und Geschwindigkeitssignale an umprogrammierte Hoverboard Hardware zur Steuerung von Brushless Elektromotoren. Dafür wird die von Emanuel Feru4 gehackte Firmware Modifikation der ursprünglichen Version5 von Jan Henrik Hemsing und Niklas Fauth verwendet. 
+Siehe Abbildung 1 und 2, Seite im Anhang.
+
+Diese dienen dem schnellen Testen und Umkonfigurieren des vorliegenden Programms.
+Sie sind vergleichbar mit Schaltern, welche je nach Stellung ganz unterschiedliche Versionen des Programms ausgeben und vor der Übersetzung des Programms berücksichtigt werden.
+Nachfolgend werden außerdem externe Bibliotheken und Quellcode Dateien eingebunden.
+
+Der Code ist also für den ESP32 Chip geschrieben. Dieses Board kostet derzeit trotz der anhaltenden weltweiten Chipknappheit nur wenige Euro und besitzt Bluetooth und Wifi Interfaces.
+Es arbeitet mit 240 MHz und hat zwei Prozessorkerne und 1 MB Flash Speicher.
+Damit der Informationsfluss der drahtlosen Schnittstellen nicht durch den Ablauf des Programmcodes gestört wird, hat der Hersteller Espressif Systems ein Realtime Operating System (RTOS) vorkonfiguriert, welches bei der Programmübersetzung automatisch genutzt wird.
+Dadurch wird sichergestellt, dass die Antworten auf Funksignale, welche zeitkritisch sind, rechtzeitig auf einem dedizierten Prozessorkern generiert werden, während der andere Kern parallel dazu das User-Programm ausführt. Das RTOS steuert dabei die Prozessorzeitzuweisungen, ohne das ich als Nutzer bzw. Programmierer des Systems mir dabei Gedanken um diese komplexen Vorgänge machen muss.
+Das ist praktisch, denn es ermöglicht die Entwicklung eines zuverlässigen Systems, in dem viele Aufgaben rechtzeitig erledigt werden, ohne viel Entwicklungsarbeit in technische Details fließen zu lassen.
+Ebenso verhält es sich mit dem Versenden von Informationen per Funksignal oder der Ansteuerung und Geschwindigkeitsregelung der Motoren durch die Hoverboard Firmware.
+Insgesamt wurden alle diese Abläufe und Verfahrensweisen schon von anderen Menschen entwickelt und zur Nutzung zur Verfügung gestellt, sodass ich sie komfortabel und ohne detaillierte tiefere Kenntnisse der exakten Abläufe nutzen kann. Sie werden zu einer Blackbox, die zwar funktioniert, aber deren genaue Funktionsweise ich nicht verstehe.
+
+Aus menschlicher Sicht betrachtet ist Programmcode ein funktionaler und hochgradig abstrakter Text, ist er doch lesbar, aber erst nach vollständiger Studie umständlich zu verstehen.
+Er ist eine technische Handlungsanweisung für eine Maschine, die den Text als ein Programm einliest. Dies findet außerdem über Umwege statt, denn häufig muss zunächst eine Übersetzung in eine reine Maschinensprache stattfinden.
+Dies passiert in einem irreversiblen Prozess, denn aus dem fertig übersetzten Maschinencode lässt sich später nicht mehr der exakte ursprüngliche Quellcode wieder zurückgewinnen.
+Er dient nur als Blaupause, nach welcher Softwarewerkzeuge einen Informationsabdruck erzeugen, nämlich das fertige und von der Maschine ausführbare Programm.
+Bei dieser Umsetzung gehen auch mitunter Informationen wie Programmkommentare aus der Vorlage verloren, denn es findet eine maschinelle Informationsverdichtung auf den reinen Funktionsablauf statt. 
+Was wirklich und genau am Ende bei dieser Übersetzung heraus kommt, das lässt sich nur mit Aufwand und erheblicher Fachkenntnis überprüfen.
+Der Wortlaut und die genaue Syntax sind dabei im ursprünglichen Code sehr wichtig, genau so wie die Art der Entwicklungsumgebung, in welcher die Übersetzung vollzogen wird.
+Beides kann unkalkulierbare Übersetzungsfehler in diese Fremdsprache einer anderen Menschenfremden Welt verursachen.
+Es ist also möglich, mit wenigen Zeilen Code hochkomplexe Prozesse innerhalb einer Rechnerarchitektur auszuführen, ohne das es möglich ist, genau zu verstehen warum dies oder jenes geschieht.
+Ich meine, in der Kunst verhält es sich bisweilen ähnlich.
+Sie ist nicht immer verständlich, sondern teils nur aufgrund taillierter Fachkenntnisse nachzuvollziehen.
+
+Der folgende Text umfasst eine Seite im Format DIN A4 in Libre Office Writer, Version 7.3.4.2(x64) mit der Schriftart DejaVu Sans Mono in Größe 10.
+Ich starre auf den Bildschirm, bemerke den Rhythmus des Cursors.
+Stumm blinkt er vor sich hin. Tick, Tick, Tick , Tick, unaufhörlich. 
+Ich bin in Gedanken schon abgeschweift. Huch, wollte ich nicht etwas schreiben?
+Ah Ja! Aber es geht gerade einfach nicht. Muss erst mal in einen Rhythmus kommen. Tack, Tack, Tack. Schreiben. Tack, Tack. Tasten drücken. In der richtigen Reihenfolge. Tack, Tack.
+Der Cursor blinkt weiter. Er wandert mit und führt meine Eingaben aus.
+Aber ich wollte nicht irgendwas schreiben, sondern was Gutes, was Sinnvolles. "Wat gutet." denke ich in meinem Dialekt. Das Cursorblinken ist etwas, das ich normalerweise selten bis nie wirklich bewusst wahrnehme.
+Da guck mal, der Computer wartet. Ist er eventuell heimlich ungeduldig? Eine Million und Hunderttausende Berechnungen später erfolgt die nächste Eingabe. Elektrische Signale zucken und ein paar Bytes wackeln über die Leitung.
+Langweilt der sich, wenn ich nichts eingebe? 
+Ein paar Trilliarden Rechenoperationen später habe ich mich gefragt, wann die Bilder für den Anhang mal fertig gegendert sind. 
+Er langweilt sich, ist aber doch zu dumm, um zu begreifen, welchen Sinn die Eingaben ergeben. Denn ich schreibe Text und keinen Programmcode. Haha, ausgetrixt – doofer Computer!
+Bisher ist mir dieser Rhythmus wirklich eine lange Zeit nicht mehr aufgefallen.
+Die Blinkgeschwindigkeit lässt sich sicherlich einstellen und anpassen.
+Präzise im Millisekundenbereich festlegen. Auf ein Tausendstel genau.
+Ebenso wie Aussehen und Farbe des Mauszeigers. 
+Würde ich von Hand schreiben, würde sich das dann auf die Art und Weise, den Ausdruck und meine Wortwahl, auswirken? Vermutlich schon. 
+Was macht dieses blinken, dieses serielle Drücken von Tasten und Knöpfen wohl mit der Wahrnehmung und mit dem Gehirn? Langweilt es sich, denn eigentlich bediene ich eine Maschine? Ist ein Stift auch eine Maschine? Ja, vielleicht schon. Und ein Blatt? "Hmm, nein. Eher ein Werkzeug." denke ich. Wird mein Denken auf eine andere Art stimuliert, wenn ich am Cursor eine höhere Blinkgeschwindigkeit einstelle? Gleich mal ausprobieren.
+Sicherlich, vielleicht fühlte ich mich mehr getrieben, angetrieben vielleicht.
+Der Cursor als ein grundlegendes Funktionsprinzip, welches Ort und Stelle der Eingabe als Feldbackkanal an die menschliche Bedienung zurückspiegelt.
+Es ist wichtig, wie ein Interface aufgebaut ist. Wir adaptieren uns daran und an seine Haptik. Wir spüren, fühlen und verinnerlichen sie, bis sie ein Teil unserer selbst werden, einem Teil einer Erweiterung des Ich, unseres Selbst.
+Das Gehirn lädt Bediencodes automatisch herunter, kompiliert sie und baut sie in unbewusst ablaufende Routinen ein, sodass Automatismen ungehindert ablaufen.
+Ein Interface kann eine grafische Darstellung von Informationen sein oder auch die Haptik oder Anordnung bzw. Anzahl von Bedienelementen.
+Der Cursor ist ein Interface, genau wie die Tastatur und der Bildschirm selbst.
+Schnittstelle Mensch. Wirst du durch die Anordnung und von Steuerelementen geleitet und gesteuert oder steuerst du sie selbst?
+
+Die drei kinetischen Objekte, welche von diesem Code gesteuert werden, sind eine Orgel (MUV), eine Wand (Taubenübungsplatz) und ein Sideboard (nix im Kühlschrank).
+Sie sind in einem experimentellen Arbeitsprozesse entstanden, welchen ich hier verbal einzufassen möchte.
+Ich sehe diese kinetischen Installationen nicht als gravierende technische Neuentwicklungen an, sondern eher als Experimente, die in einem Prozess aus der Ansammlung und Kombination bereits vorhandener Dinge entstanden. Ich finde, ich habe dafür ich in keiner Weise gravierende Neuentwicklungen geleistet, sondern lediglich Bekanntes zu etwas kombiniert.
+Wäre ich eher ein Ingenieur denn Künstler, so hätte ich vermutlich vorher Traglasten und Antriebsleistungen berechnet und alles sehr genau geplant und simuliert. Ich hätte vielleicht eigene Kommunikationsprotokolle definiert und mir über viele Details vorher eine Vorstellung gemacht, bevor ich auch nur eine Tätigkeit zur Umsetzung meiner Idee in der realen Welt anstellte. Mein Ansatz ist allerdings ein umgekehrter, er besteht darin, einfach auszuprobieren.
+Loslegen, ohne einen präzise ausgearbeiteten Plan, irgendwie anfangen.
+Es gibt eine möglichst einfache Grundidee, und diese wird versucht zu realisieren. Die dabei auftretende Probleme werden dann durch zusätzliche Schritte kompensiert.
+Irgendwo ein Schräubchen rein drehen damit es hält, irgendwo leicht gegen Hämmern um eine Position zu korrigieren.
+Oder eine zusätzliche Feder einbauen, damit etwas schwingt oder eben nicht schwingt. Ein Kabel mit einem Taster verlegen, damit was ab- oder anschaltet. Noch einen kleinen Adapter anfertigen, der das dann hält oder eine Kabelverbindung herstellt und zusätzlich isolieren. Gucken, ob etwas klappt, ausprobieren und testen - Entwickeln. Dies sind Prozesse meiner Arbeitsweise.
+
+Ich sehe es so, dass ich existierende Teil dann wie ein Mosaik zusammensetze.
+Ich gebe zu, dass ich eindeutig zu viele Dinge besitze und mich auch schlecht trennen kann.
+Denn ständig fällt mir noch ein Grund oder anderer Verwendungszweck für meine überflüssigen Sachen ein, sodass ich alles aufheben möchte und selbst wenn ich mich dazu durchringe, etwas zu entsorgen, so geschieht es mitunter, das ich sogar meine eigenen Sachen wieder nachträglich aus der Mülltonne fische.
+Bei dem Sideboard war genau so eine Aktion. Ich dachte: „Das schmeiße ich jetzt endlich mal weg. Oder ich verarbeite es vorher doch noch in einer Installation.“, zusätzlich mit dem selbsttäuschenden Gedanken „Das kann ich dann ja immer noch wegwerfen“.
+Denn eigentlich sah ich mich aufgrund von Platzmangel zu dem Zeitpunkt gezwungen, das Sideboard als Gebrauchsmöbel zu entsorgen. Etwas in mir sträubte sich dagegen. Ich hatte es vor ein paar Jahren bei der Wohnungsauflösung einer älteren verstorbenen Dame mitgenommen.
+Nachdem es in zwei verschiedenen WG Zimmern als Möbelstück genutzt wurde, war es in einem temporären Atelier in der Ringstraße in Köln gelandet. Dort musste ich umziehen und mich von der Raumgröße her verkleinern.
+Die Orgel und die Wand waren zu dem Zeitpunkt schon als weitere Objekte festgelegt und weitestgehend realisiert.
+ 
+Da das Board von der Größe her zwar groß, aber nicht allzu wuchtig war, stellte ich es mir als selbstfahrendes Objekt ebenfalls interessant vor.
+Nach dem Transport in mein Arbeitsatelier und schweißte dort ein passgenaues Untergestell aus Vierkantstahlrohren zusammen und montierte in den Ecken vier große Laufrollen. Dadurch war es bereits möglich, das Board von Hand zu verschieben, was zu einem Eindruck der dafür nötigen Kraft und Fahrdynamik führte. In die Mitte des Rahmens setzte ich kurze Rohrabschnitte als Aufnahme für die Antriebseinheit, welche da hinein gesteckt wird.
+Diese Fertige ich ebenfalls aus Vierkantrohren und Flacheisen an.
+Dies alles geschieht fast wie von selbst durch ausprobieren, ausmessen und umsetzen einer Vorstellung, die ich in Gedanken habe. Dabei gibt jeder gemachte Schritt und jede gewählte Anordnung das jeweils folgende vor.
+Für die Brushlessmotoren der Hoverboards habe ich schon im Vorfeld eine geeignete Befestigung erprobt. Die Radnabe passt nämlich vom Durchmesser genau in ein Quadratrohr mit 20 mm Kantenlänge. Ein Loch wird hineingebohrt und an die Stelle eine Mutter aufgeschweißt. Die Radnabe wird dann darin durch eine Schraube fixiert.
+Das Quadratrohr lässt sich darauf hin beliebig ausrichten und in der gewünschten Position verschweißen.
+Hoverboards werden in defektem Zustand auf dem Gebrauchtmarkt für einen Preis zwischen 10 und 30€ angeboten. Durch regelmäßige Marktbeobachtung und Käufe habe ich einen großen Fundus davon angesammelt.
+Diese Boards wurden vor wenigen Jahren zum Neupreis zwischen 130€ und 250€ als Spielzeuge für Kinder und Jugendliche angeboten und erfreuten sich großer Beliebtheit.
+Ein Schwachpunkt bei diesen Boards sind die Akkus. Zum einen wird daran in der Produktion nach Möglichkeit gespart und zum anderen sind diese hochgradig belastet, um genug Energie für den Transport eines Menschen zu liefern. Diese Boards sind immerhin für ein Gewicht von 100 kg freigegeben und dabei wurde wohl hauptsächlich die mechanische Stabilität berücksichtigt.
+Ursprünglich bestanden die Akkus aus zwanzig Lithium Ionen Zellen der Bauform 18650.
+Die Bezeichnung dieses sehr verbreiteten Zellentyps ist eine Angabe über die Größe, nämlich achtzehn Millimeter Durchmesser und sechshunderfünfzig Millimeter lang.
+Die zwanzig Zellen sind in der Konfiguration 10S2P verbunden. Das bedeutet, es sind immer zwei Zellen parallel verbunden und von diesen Pärchen sind zehn Stück in Reihe geschaltet.
+Eine Zelle hat voll aufgeladen eine Spannung von 4,2 Volt und ist bei 3,6 Volt entleert. Durch die Konfiguration von zehn Zellen hintereinander in Reihe ergibt sich eine Spannung von 42 Volt bei vollgeladenem Akku. Die Parallelschaltung im Akku dient dazu, um ihn leistungsfähiger zu machen und insgesamt die Menge der gespeicherten Energie zu erhöhen.
+Denn zwei parallel geschaltete Zellen können natürlich mehr Strom liefern als eine einzelne, sie können doppelt so viel Leistung abgeben.
+Bei Board, die etwas neueren Herstellungsdatums waren, fand ich ausschließlich Akkus in der Konfiguration 10S1P vor. Die neueren Boards lassen sich eindeutig an einem geänderten Hauptplatinenlayout erkennen. Auch hier scheint die Platinenfläche insgesamt geschrumpft zu sein, was ebenfalls verringerten Produktionskosten geschuldet sein dürfte.
+Die 10S1P Akkus bestanden somit insgesamt aus lediglich zehn hintereinander geschalteten Zellen. Auf die zehn zusätzlich parallel geschalteten Zellen war einfach verzichtet worden.
+Die äußerlich kleinere Bauform, welche aufgrund der verringerten Abmessungen von außen leicht zu erkennen gewesen wäre, wurde dabei entweder durch Plastikgehäuse oder Schaumstoffpolster um den Akku kaschiert.
+Der Akku ist aber ohnehin im Inneren des Boards verbaut und von außen ohne ein Öffnen des Gehäuses nicht sichtbar. Diese reduzierten Akkus dürften sicherlich im Betrieb des Boards an der Grenze zur Überlastung betrieben werden, so das ihre Lebensdauer wohl nur eine kurze sein dürfte.
+Ein weiteres Problem ist außerdem die Tiefentladung der Akkus.
+Wird das Spielzeug für die Wintermonate nicht genutzt und steht bis zum nächsten Frühjahr im Keller, so ist der Akku bis dahin durch seine Selbstentladung von der Spannung so weit abgefallen, das er vom mitgelieferten Ladegerät nicht mehr erkannt wird.
+Der Akku beinhaltet nämlich auch eine Schutzschaltung gegen Kurzschluss, Hitze, Unter- und Überladung. Das ist natürlich bei Lithium-Ionen-Akkus Total auch sinnvoll, da sie theoretisch in der Lage sind, sehr viel Energie zu speichern, woraus ein Sicherheitsrisiko entsteht.
+Ein Kommentar dazu von Martin Nawrath lautet „Ein Lithium-Ionen-Akku speichert pro Gewichtseinheit mehr Energie als Schwarzpulver. Er setzt diese Energie aber normalerweise nicht innerhalb von Sekundenbruchteilen frei“, Ground Zero – 25.05.2022.
+Eine schnelle Recherche hierzu ergibt im Internet die Angabe über die Energiedichte von Schwarzpulver mit 280 Kilojoule/Kg und Lithium-Ionen Akkumulatoren mit 90–250 Wh/kg.
+Eine Wattstunde beträgt 3,6 Kilojoule, somit ergibt sich umgerechnet eine Energiedichte von
+324 – 900 Kilojoule/Kg für die Akkus. TNT wird übrigens mit 4180 Kilojoule angegeben.
+Für ein Wechseln des Akkus an einem Hoverboard wird im Internet zwischen 50€ und 80€ verlangt, das kann schon die Hälfte des Neupreises eines solchen Boards betragen.
+Die reinen Einkaufskosten eines Austauschakkus aus China mit 20 Zellen und einem Gewicht von 1 Kg liegen bei ca. 25€ pro Stück inklusive kostenfreier Lieferung.
+Der Sprengstoff Eurodyn 3000 hingegen kostet beim Unternehmen Oricamining nur günstige 3€/Kg.6
+Diese Firma hat ohnehin ein sehr vielversprechendes Leistungsangebot, alle Dienstleistungen für Sprengungen sind vorhanden. Der Nachbar stört sonntags früh regelmäßig mit seiner Heckenschere?
+Kein Problem, dann einfach mal als Überraschung eines Montags die Hecke etwas wegsprengen lassen. Oder für ein KHM Projekt eine kleine Roman Signer Gedenksprengung machen? Kein Problem! 
+Vielleicht wäre es auch für Anwendungen Elektrischer Mobilität in Anbetracht des stetig wachsenden Preisdrucks in Zukunft möglich, aus Kostengründen einfach Sprengstoff anstelle von Akkus einzusetzen. Aus Sicht der Energiedichte betrachtet optimal aber mit dem Aufladen wird es dann natürlich allerdings schwierig. Oder das könnte auch etwas für die Tuningszene werden, die ja in der Zukunft die leisen Elektro Autos irgendwie laut bekommen muss. Und auch praktisch, falls jetzt wieder richtiger Krieg anfängt. Die russischen Panzer haben im Übrigen ja auch eine Reaktive7 Panzerung. Die funktioniert so, dass sie mit Platten behangen sind, in denen Sprengstoff eingearbeitet ist. Bestimmt minderwertiger zwar und nicht so ein guter und hochwertiger wie der aus dem Bergbaubedarf, aber doch Sprengstoff immerhin. Wenn jetzt eine panzerbrechende Hohlladung darauf einschlägt, dann löst das eine Explosion der Panzerung aus, die die Wirkung von der angreifenden Munition schwächt, indem sie dieser einfach entgegenexplodiert. Wenn da nicht der Bock zum Gärtner gemacht wird. Dagegen gibt es aber auch schon wieder was, nämlich die Doppelhohlladung. Die sprengt zweimal schnell hintereinander, sodass die Reaktivpanzerung8 nur die erste Sprengung aufhebt, aber die zweite kann dann wieder wirken.
+Das wäre doch evtl. auch mal was beim neuen Porsche Cayenne. Also so eine Reaktivpanzerung einfach um den Akku herumgebaut und wenn der dann mal brennen sollte, sprengt er sich einfach selbst aus. Oder wenn eine Fahrradfahrerin droht, den Lack zu zerkratzen, dann schnell wegsprengen.
+
+Jedenfalls belastet es mich, wenn in der Stadt Sperrmülltage sind.
+Ich sehe die vielen nutzbaren Dinge, aber lasse sie doch lieber stehen, denn ich habe schon genug Zeug.
+Ich erlaube mir lediglich, hin und wieder Bilder oder Bilderrahmen, welche an der Straße stehen, mitzunehmen. 
+Die Leute kaufen sich ja insgesamt Zeug wie verrückt, teilweise wohl einfach aus Langeweile oder Einsamkeit.
+Und damit Platz für neue Dinge ist, müssen die alten weichen.
+Mir wird plötzlich auch klar, dass ich meine Installationen entweder selbst vermutlich bis ans Ende meines Lebens aufheben und verwahren werde oder sie tatsächlich einfach vorher selbst entsorge. Vielleicht könnte ich eventuell Land-Art daraus machen, wenn ich es einfach illegal an einer abgelegenen Stelle in den Wald werfe.
+So machen das ja viele mit ihrer Kunst, bei Spaziergängen lässt es sich allenthalben entdecken.
+Wenn ich doch auf reine Videokunst umzusatteln könnte, dann bräuchte ich lediglich einen kleinen USB-Stick oder eine Speicherkarte und fertig. Oder ich würde alles in 1,4 Megabyte große Häppchen aufteilen und auf Disketten kopieren, so wie das früher gemacht wurde. Und die Disketten könnte ich dann auf irgendwo aufkleben und bemalen. Und dann dadrauf projizieren. Und danach alles wegschmeißen. denn das geht immer.
+
+Zurück zur Kunst:
+Auf dem Sideboard stehen ein Globus und eine Stehlampe.
+Ich habe in ihre Sockel Supermagneten eingeschraubt, die sie mithilfe einer Metallplatte an der Oberseite des Boards fixieren.
+Die Anschlusskabel laufen auf der Rückseite des Boards entlang und führen von unten ins Innere.
+Damit die Lampen leuchten, habe ich in die untere der drei Schubladen des Boards ein paar alte Akkus von Hoverboards gelegt und über eine Steckdose mit den Lampen verbunden.
+Die Birnen sind ausgetauscht gegen ganz Spezielle aus dem Bootszubehör.
+Sie passen in normale Lampenfassungen, aber arbeiten mit Gleichspannung, irgendwas zwischen neun und fünfzig Volt funktioniert. Selbst wo Plus und Minus angeschlossen wird, ist den Lampen egal. Auf der Packung steht in roter Umrandung "Energieeffizienzklasse F++".
+Ich denke über Schulnoten nach und es kommt mir vor wie eine Sechs plus. Was für eine unsinnige Bewertung. Erinnert mich daran, dass Käse neuerdings die Gesundheitsklasse „E“ hat, aber trotzdem gut schmeckt. Ich mache einen Test und die Birnen brennen ca. 4-5 Stunden pro Akku.
+Ich bin damit zufrieden, denn so kann ich die Lampen während einer Ausstellung mit zwei ollen Akkus den ganzen Tag lang leuchten lassen.
+Neben dem Globus liegt eine Pistole, welche aus einzelnen verschweißten Cent Stücken zusammengesetzt ist. Auch innen ist sie komplett mit Cent Münzen gefüllt, oben am Patronenauswurf ist sie aber offen. Wenn zu wild damit rumgefuchtelt wird, dann fliegen die enthaltenen Geldstücke heraus. Außerdem wird so eher das Gewicht einer echten Pistole erreicht. Die ist ja auch komplett aus Metall und so müsste das also ungefähr hinkommen.
+Ich habe die Idee, unterschiedliche Arten von Waffen aus Cent Münzen zu bauen.
+Messer und Schwerter sowie Keulen und Schusswaffen, ein Katana, eine Uzi, eine AK-47.
+Eine ganze Kollektion aus ein, zwei und fünf Cent Stücken. Durch die Produktionen aus Hollywood und die Gamingindustrie kennen viele Jugendliche ein ganzes Repertoire an Schusswaffen auswendig. Aus Euro Münzen wäre mir das allerdings derzeit noch zu teuer und die kleinen Cent Münzen werden bestimmt bald abgeschafft, weil sie unpraktisch sind - einfach von der Inflation aufgefressen. Dennoch sind sie in großen Mengen im Umlauf.
+Es ist allerdings überhaupt nicht trivial, kostengünstig eine große Menge davon zu bekommen.
+Als ich bei der Sparkasse Köln/Bonn telefonisch nachfrage, ob ich einfach am Schalter Scheine in Cents wechseln könne, versicherte mir man zwar „natürlich, das sei kein Problem. Wir sind ja eine Bank, da können sie das einfach machen. Es wäre sogar im Gegensatz zu anderen Banken kostenlos für Kunden möglich“.
+Natürlich alles gelogen, als ich mit einem Hunderteuroschein in der Tasche an die Reihe komme und ich mein Anliegen erkläre, mauert der Angestellte am Schalter.
+Nein, das ginge so nicht. Es geht wenn überhaupt nur als Kunde, und dann kostet es 8€ um 10€ in ein Cent Stücke zu wechseln. Überhaupt, ob ich denn eine Ahnung hätte, wie viele Tonnen sie von einem Spediteur täglich davon zur Bundesbank nach Berlin fahren müssten?
+Das wäre ein riesiger Aufwand und die Sparkasse selbst müsse ordentlich sortierten und geprüften Rollen wieder von der Bundesbank zurück abkaufen und das wäre deshalb halt so teuer.
+Ich weiß nicht mehr genau wie, aber irgendwie hat Vera, eine Angestellte aus der KHM Mensa es mitbekommen, dass ich Geldmünzen suche. Grinsend meinte sie, ich solle mal ein paar Wochen warten, woraufhin sie mir später dutzende Kilogramm besorgte.
+Ich finde, dass man mit diesen "Waffen" zwar niemanden erschießen, dafür aber erschlagen kann. Das ist in der Menschheitsgeschichte sowieso vermutlich ein häufigerer Tod gewesen als erschießen.
+Zugleich ist es ein Vorgriff auf eine Installation, welche noch realisiert werden soll.
+Das schlimmste sind ja diese angefangenen Projekte. Es sind diejenigen, welche niemals fertig werden. Oder drohen niemals fertig zu werden. Oder jene, welche nur in der Gedankenwelt existieren und bei denen erst recht nicht mit der Realisierung begonnen werde.
+Vorweg abgebrochene Experimente, Baustellen, Gedankenmüll, Schrott.
+Trotzdem halten sich manche Gedanken und setzten sich gegen alle Attacken des Vergessens durch.
+Natürlich lassen sich mit Leichtigkeit Dinge erdenken, welche es noch nicht gibt. Aber nur mit dem Denken alleine ist es ja nicht getan.
+Ich wollte mal so eine Art Kanone für Cent Münzen bauen, welche diese verschießt und so einen physischen Geldstrom im Raum entstehen lässt.
+Vergleichbar mit einem Springbrunnen, welcher mit Münzen anstelle von Wasser funktioniert. In der Realität akkumulieren sich geringe Geldbeträge täglich und  bilden in der Summe erhebliche Beträge, von denen Staaten dann Atomraketen oder normale Waffen kaufen können.
+
+
+Neben der Stehlampe auf dem Sideboard liegt „Das Kapital“ von Karl Marx, vierte Ausgabe von circa 1926.
+Auf jeden Fall superalt, der Einband geht schon auseinander. Ich habe es mit militärischem Tarnklebeband geflickt und ein Kreuz auf den Deckel geklebt. Jetzt sieht es aus wie die Bibel. In gewisser Weise ist es in unserer Zeit ja auch wie eine Bibel, da darin die Sachverhalte unseres kapitalistischen Systems beschriebenen werden.
+Ich habe "das Kapital" nicht durchgelesen. Dafür habe ich keine Zeit, ich muss nämlich immer viel arbeiten.
+Nicht nur um Geld zu verdienen, sondern auch, um die Möglichkeiten der eigenen Kunstproduktion zu erhalten.
+Also permanent die Bedingungen herstellen und erhalten zu müssen, unter denen die eigene Kunst entstehen und gedeihen kann. Irgendwie Geld zu verdienen mit irgendwelchen Jobs, Aufträgen und Anstellungen, dabei Ausstellungen organisieren, Atelierräume finden, einrichten, sichern und unterhalten, Bewerbungen für Preise, Stipendien und Residenzen schreiben und sich selbst zu vermarkten.
+Also kurz durchgeblättert und auszugsweise Stellen gelesen habe ich schon, aber es nicht komplett gelesen.
+Die oberste Schublade des Sideboards ist leicht geöffnet und darin steht ist auf einem Haufen Bargeld eine Dose Campbell Tomatensuppe aufgebahrt.
+Ganz schön dramatisch und ich weiß selber nicht, ob das eventuell zu plump ist. Ich bin mir damit nicht so sicher, aber Stumpf ist ja oft Trumpf. Es ist ja an Phänomenen wie Donald Trump und der Bildzeitung zu sehen, wie erfolgreich simple Symbolik sein kann.
+
+Irgendwann:
+Es ist Hochsommer und heiß. Ich wohne in Bonn und pendle nahezu täglich mit dem Zug nach Köln. Ich empfinde es noch nicht so wie später dann als belastend, sondern komme mir eher vor, als wäre ich auf Geschäftsreise. Das bringt einen gewissen Nervenkitzel und man kann sich selbst wichtig und besonders vorkommen.
+Ich steige am Kölner Hauptbahnhof aus, dort habe ich ein Schrottfahrrad stehen, mit dem ich bis zur KHM weiterfahre. Ich öffne das Fahrradschloss und fahre über den rückseitig gelegenen Bahnhofsvorplatz. In der Mitte steht ein betrunkener Mann vor einer Wasserfontäne, sein Oberkörper ist nackt. Er sieht verwahrlost aus, seine Kleidung ist sehr schmutzig und zerrissen, vermutlich lebt er auf der Straße.
+Er wankt auf den Springbrunnen zu, dabei öffnet er seine Hose und pisst, während er am Rand des Wasserspiels steht, in den Brunnen. Dann läuft er mit erhobenen Armen komplett hinein. Ich nehme die Szenerie nur kurz im Vorbeifahren vom Fahrrad aus wahr und frage mich danach, was ich da gerade gesehen habe. Niemand sonst schien es bemerkt zu haben.
+
+Und das ist dann Kunst, oder wie?
+Da kommt mir der verhasste, aber allseits immer wieder beliebte Schenkelklopfer „Ist das Kunst oder kann das weg? - Höhöhöhö“ in den Sinn. 
+Ja, natürlich! Kann weg. Soll mal wer kaufen, dann isses weg.
+Kunst, was ist das?
+Alles kann, ja alles könnte Kunst sein.
+Die können die Haustiere dann zum spielen bekommen. So wie „Oh, der Hund hat meine Hausaufgaben gefressen.“
+Der Hund hatte auch die Sim Karte vom Hotspot im Flixbus gefressen. Ach, der Hund, das alte Schwein. Er frisst alles und bellt. Ich höre ihn bellen und verstehe:
+
+String "Kunst ist ungewöhnlich.";
+String "Kunst ist mutig.";
+String "Kunst ist eigentlich teuer";
+String "Kunst ist Konvention.";
+String "Kunst ist elitär aber Graffity ist auch Kunst.";
+String "Kunst ist schlecht wenn sie nichts kostet.";
+String "Kunst ist unverständlich.";
+String "Kunst ist Kryptisch.";
+String "Kunst ist klamm.";
+String "Kunst ist frei und Zeit. Kunst ist Hobby. ";
+String "Kunst ist lang.";
+String "Kunst ist wundern und wuchern.";
+String "Kunst ist zahmlos.";
+String "Kunst ist bleiern.";
+String "Kunst ist Arbeit.";
+String "Kunst ist Kabelsalat.";
+String "Kunst ist ein Produkt.";
+String "Kunst ist Quatsch.";
+String "Kunst ist ein System.";
+String "Kunst ist angepasst an den Markt.";
+String "Kunst ist in sich selbst.";
+String "Kunst ist scheiteln.";
+String "Kunst ist mitmachen.";
+String "Kunst ist Kleber.";
+String "Kunst ist Kurtaxe nicht bezahlen. Kunst ist Kriminell.";
+//und
+String "Kunst ist keine Kunst.";
+//Nichts ist Kunst - oder: Es gibt nichts was keine Kunst ist.
+//Anhang:
+
+
+
+
+
+
+
+
+
+
+
+
+
+

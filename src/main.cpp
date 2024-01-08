@@ -1,12 +1,13 @@
 //#define RECEIVER_1 //(Orgel)
 //#define RECEIVER_2 //Wand
 //#define RECEIVER_3 //Board
-#define SENDER1
+#define SENDERALL
+//#define SENDER1
 //#define SENDER2
 //#define SENDER3
 //#define DEBUG
 
-#if defined SENDER1 || defined SENDER2 || defined SENDER3
+#if defined SENDER1 || defined SENDER2 || defined SENDER3 || defined SENDERALL
 #define DEBUG
 #define SCREEN
 #endif
@@ -93,7 +94,7 @@ if (esp_now_init() != ESP_OK) {
   
   #endif
 
-  #if defined SENDER1 || defined SENDER2 || defined SENDER3
+  #if defined SENDER1 || defined SENDER2 || defined SENDER3 || defined SENDERALL
   button1.setDebounceTime(50); // set debounce time to 50 milliseconds
   button2.setDebounceTime(50); // set debounce time to 50 milliseconds
   button3.setDebounceTime(50); // set debounce time to 50 milliseconds

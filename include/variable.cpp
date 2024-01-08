@@ -101,7 +101,7 @@ bool buttonpressed;
 uint16_t potval;
 uint16_t potprev;
 bool potchanged;
-
+uint16_t linevalue;
 uint8_t led_status = 0;
 
 #ifndef LED_BUILTIN
